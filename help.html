@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>منصة مكافحة الابتزاز الإلكتروني</title>
+<meta name="description" content="منصة مكافحة الابتزاز الإلكتروني – قدّم بلاغك بأمان وسرية كاملة.">
+<meta name="keywords" content="مكافحة الابتزاز, الابتزاز الإلكتروني, بلاغات, أمن, حماية, WhatsApp">
+<meta name="author" content="منظمة اللواء القاعدة الجوية 590">
+<style>
+:root {
+  --gold: #ffd700;
+  --cyan: #19e6d8;
+  --pink: #ff4eb3;
+  --glow: rgba(255,215,0,0.5);
+  --text: #f0f0f0;
+  --box-bg: rgba(30,30,30,0.85);
+  --box-border: rgba(255,215,0,0.7);
+}
+body {margin:0;padding:0;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:black;color:var(--text);}
+canvas.bgCanvas {position:absolute; top:0; left:0; width:100%; height:100%; z-index:0;}
+.container {position:relative; z-index:1; max-width:950px; margin:60px auto; padding:40px; border-radius:20px; background: rgba(10,10,10,0.75); box-shadow:0 0 40px var(--gold), 0 0 80px var(--cyan); text-align:center;}
+h1 {font-size:2.6em; color:var(--gold); text-shadow:0 0 15px var(--glow),0 0 40px var(--cyan); margin-bottom:25px;}
+p#welcomeText, p#welcomeText2 {margin-bottom:35px; font-size:1.3em; line-height:1.7; color:#bfeff0; white-space:pre-line; min-height:140px;}
+button {padding:20px 50px; font-size:1.3em; border:none; border-radius:20px; background:linear-gradient(45deg,var(--gold),var(--cyan),var(--pink)); color:black; font-weight:bold; cursor:pointer; text-shadow:0 0 10px var(--glow); transition: all 0.4s ease; margin-bottom:20px;}
+button:hover {transform:scale(1.08); box-shadow:0 0 35px var(--gold),0 0 60px var(--pink),0 0 80px var(--cyan);}
+#reportPage {display:none; margin-top:30px; text-align:center;}
+input {width:100%; padding:16px; margin-bottom:18px; border-radius:15px; border:2px solid rgba(255,255,255,0.2); background:transparent; color:var(--text); font-size:1.1em; transition: all 0.3s ease; transform:scale(0.5); opacity:0;}
+input.show {transform:scale(1); opacity:1; transition: all 0.5s ease;}
+input:focus {border-color:var(--gold); box-shadow:0 0 15px var(--glow);}
+input::placeholder {color:#bfeff0;}
+#status {margin-top:20px; min-height:22px; font-weight:bold; font-size:1.1em;}
+.cell {background: var(--box-bg); border:2px solid var(--box-border); border-radius:12px; margin-bottom:20px; padding:20px; box-shadow:0 0 15px rgba(0,0,0,0.5); opacity:0; transform: scale(0.5); transition: all 0.5s ease;}
+.cell.show {opacity:1; transform: scale(1);}
+.cell span.label {font-weight:bold; display:block; color:var(--cyan);}
+.cell span.value {display:block; color:#bfeff0; margin-top:5px;}
+</style>
+</head>
+<body>
+
+<canvas class="bgCanvas" id="bgCanvas"></canvas>
+
+<div class="container" id="homePage">
+  <h1>منظمة اللواء القاعدة الجوية 590</h1>
+  <p id="welcomeText"></p>
+  <button id="openForm">تقديم بلاغ</button>
+</div>
+
+<div class="container" id="reportPage">
+  <h1>تقديم البلاغ</h1>
+  <p id="welcomeText2"></p>
+
+  <div id="boxesContainer"></div>
+
+  <form id="reportForm" action="https://formspree.io/f/xgvnzjnw" method="POST">
+    <input type="text" name="name" id="nameInput" placeholder="اسمك الثلاثي" required>
+    <input type="text" name="phone" id="phoneInput" placeholder="رقم الواتس للتواصل" required>
+    <input type="hidden" name="date" id="dateInput">
+    <button type="submit">إرسال البلاغ</button>
+  </form>
+  <div id="status"></div>
+</div>
+
+<script>
+// خلفية متحركة
+const canvasBG = document.getElementById('bgCanvas');
+const ctxBG = canvasBG.getContext('2d');
+let w = canvasBG.width = window.innerWidth;
+let h = canvasBG.height = window.innerHeight;
+window.addEventListener('resize',()=>{w=canvasBG.width=window.innerWidth; h=canvasBG.height=window.innerHeight;});
+const stars=[]; const orbs=[];
+for(let i=0;i<150;i++) stars.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*2+1, dx:(Math.random()-0.5)*0.4, dy:(Math.random()-0.5)*0.4});
+for(let i=0;i<30;i++) orbs.push({x:Math.random()*w, y:Math.random()*h, r:Math.random()*15+7, dx:(Math.random()-0.5)*0.3, dy:(Math.random()-0.5)*0.3, a:Math.random()});
+function animateBG(){
+  ctxBG.fillStyle='rgba(0,0,0,0.25)'; ctxBG.fillRect(0,0,w,h);
+  stars.forEach(s=>{ctxBG.beginPath();ctxBG.arc(s.x,s.y,s.r,0,Math.PI*2);ctxBG.fillStyle='white';ctxBG.fill(); s.x+=s.dx; s.y+=s.dy; if(s.x<0)s.x=w;if(s.x>w)s.x=0;if(s.y<0)s.y=h;if(s.y>h)s.y=0;});
+  orbs.forEach(o=>{const grd=ctxBG.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r*3); grd.addColorStop(0,`rgba(255,215,0,${0.15*o.a})`); grd.addColorStop(1,'rgba(0,0,0,0)'); ctxBG.fillStyle=grd; ctxBG.beginPath(); ctxBG.arc(o.x,o.y,o.r*3,0,Math.PI*2); ctxBG.fill(); o.x+=o.dx;o.y+=o.dy;if(o.x<0)o.x=w;if(o.x>w)o.x=0;if(o.y<0)o.y=h;if(o.y>h)o.y=0;});
+  requestAnimationFrame(animateBG);
+}
+animateBG();
+
+// نص ترحيبي تدريجي سريع
+const welcomeText = `مرحبًا بك في منظمة اللواء القاعدة الجوية 590 – مكافحة الابتزاز الإلكتروني.\nأنت الآن في بيئة آمنة وسرّية بالكامل. قدّم بلاغك الآن بكل راحة واطمئنان.`;
+let i=0;
+const welcomeTextEl = document.getElementById('welcomeText');
+function typeWriter(){
+  if(i<welcomeText.length){
+    welcomeTextEl.textContent += welcomeText.charAt(i);
+    i++;
+    setTimeout(typeWriter,15);
+  }
+}
+typeWriter();
+
+// فتح النموذج
+document.getElementById('openForm').addEventListener('click', ()=>{
+  document.getElementById('homePage').style.display='none';
+  document.getElementById('reportPage').style.display='block';
+  window.scrollTo({ top: 0, behavior:'smooth' });
+
+  const inputs = [document.getElementById('nameInput'), document.getElementById('phoneInput')];
+  inputs.forEach((input,idx)=>{
+    setTimeout(()=>{input.classList.add('show');}, idx*200);
+  });
+
+  const text2 = `مرحبًا! أدخل اسمك الثلاثي ورقم الواتس فقط، معلوماتك سرية بالكامل.`;
+  const welcomeText2El = document.getElementById('welcomeText2');
+  let j=0;
+  function typeWriter2(){
+    if(j<text2.length){
+      welcomeText2El.textContent += text2.charAt(j);
+      j++;
+      setTimeout(typeWriter2,15);
+    }
+  }
+  typeWriter2();
+});
+
+// إرسال البيانات عبر Formspree + عرض جدول
+const form = document.getElementById('reportForm');
+const container = document.getElementById('boxesContainer');
+const statusEl = document.getElementById('status');
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('nameInput').value.trim();
+  const phone = document.getElementById('phoneInput').value.trim();
+  if(!name || !phone){ alert("الرجاء كتابة الاسم الثلاثي ورقم الواتس."); return; }
+  document.getElementById('dateInput').value = new Date().toLocaleString();
+
+  const formData = new FormData(form);
+  try{
+    const response = await fetch(form.action, {
+      method: form.method,
+      body: formData,
+      headers: {'Accept':'application/json'}
+    });
+    if(response.ok){
+      const newCell = document.createElement('div');
+      newCell.classList.add('cell');
+      newCell.innerHTML = `<span class="label">الاسم الثلاثي</span><span class="value">${name}</span>
+                           <span class="label">رقم التواصل (واتس)</span><span class="value">${phone}</span>
+                           <span class="label">تاريخ الإرسال</span><span class="value">${new Date().toLocaleString()}</span>`;
+      container.appendChild(newCell);
+      setTimeout(()=>{newCell.classList.add('show');},50);
+
+      statusEl.style.color='#bff8f2';
+      statusEl.textContent='تم الإرسال ✅ سيتم التواصل معك عبر رقمك الذي أرسلته لنا عبر الواتس.';
+      form.reset();
+    } else {
+      const data = await response.json();
+      statusEl.style.color='#ff4e4e';
+      statusEl.textContent = data.error || 'حدث خطأ، حاول مرة أخرى.';
+    }
+  } catch(err){
+    statusEl.style.color='#ff4e4e';
+    statusEl.textContent='حدث خطأ في الاتصال، تحقق من الانترنت.';
+  }
+});
+</script>
+</body>
+</html>
